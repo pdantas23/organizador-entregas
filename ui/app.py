@@ -213,14 +213,9 @@ class App(tk.Tk):
 
         for d_date, d_list in self._session.get_by_date().items():
             try:
-                added, skipped = self._persistence.merge_and_save(d_date, d_list)
-                all_saved      = self._persistence.load(d_date)
-                filepath       = self._exporter.export(d_date, all_saved)
-
-                msg = f"• {filepath.name}: {added} adicionada(s)"
-                if skipped:
-                    msg += f", {skipped} duplicata(s) ignorada(s)"
-                results.append(msg)
+                filepath = self._exporter.export(d_date, d_list)
+                self._persistence.save(d_date, d_list)
+                results.append(f"• {filepath.name}: {len(d_list)} entrega(s)")
             except Exception as exc:
                 errors.append(f"• {d_date}: {exc}")
                 log.error("Erro ao exportar %s: %s", d_date, exc)
