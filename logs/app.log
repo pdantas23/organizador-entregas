@@ -1,0 +1,14 @@
+2026-05-06 15:55:43 | INFO     | organizador          | Logging inicializado → /Users/philip/Desktop/mfd/organizador/logs/app.log
+2026-05-06 15:55:43 | INFO     | organizador.session  | Adicionada à sessão: Supermercado Central | ORC-001
+2026-05-06 15:55:43 | INFO     | organizador.session  | Adicionada à sessão: Farmácia Popular | ORC-002
+2026-05-06 15:55:43 | INFO     | organizador.session  | Adicionada à sessão: Construtora Silva | ORC-003
+2026-05-06 15:55:43 | INFO     | organizador.session  | Adicionada à sessão: Escola Estrela | ORC-004
+2026-05-06 15:55:43 | DEBUG    | organizador.persistence | JSON não encontrado: /Users/philip/Desktop/mfd/organizador/data/entregas-2026-01-15.json
+2026-05-06 15:55:43 | INFO     | organizador.persistence | Salvas 4 entrega(s) em entregas-2026-01-15.json
+2026-05-06 15:55:43 | INFO     | organizador.persistence | Merge 2026-01-15 → adicionadas=4, ignoradas=0
+2026-05-06 15:55:43 | INFO     | organizador.persistence | Carregadas 4 entrega(s) de entregas-2026-01-15.json
+2026-05-06 15:55:43 | WARNING  | organizador.persistence | Duplicata ignorada: Supermercado Central | ORC-001
+2026-05-06 15:55:43 | INFO     | organizador.persistence | Salvas 4 entrega(s) em entregas-2026-01-15.json
+2026-05-06 15:55:43 | INFO     | organizador.persistence | Merge 2026-01-15 → adicionadas=0, ignoradas=1
+2026-05-06 15:55:43 | INFO     | organizador.persistence | Carregadas 4 entrega(s) de entregas-2026-01-15.json
+2026-05-06 15:55:43 | INFO     | organizador.export.excel | Excel gerado: entregas-2026-01-15.xlsx (4 entrega(s))

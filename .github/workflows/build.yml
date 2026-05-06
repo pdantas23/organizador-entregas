@@ -1,0 +1,102 @@
+name: Build Executables
+
+# Dispara em push para main OU manualmente pelo botão "Run workflow" no GitHub
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+
+  # ── macOS ────────────────────────────────────────────────────────────────────
+  build-macos:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependências
+        run: pip install -r requirements-dev.txt
+
+      - name: Gerar .app (macOS)
+        run: |
+          python -m PyInstaller \
+            --name            OrganizadorEntregas \
+            --windowed \
+            --onedir \
+            --noconfirm \
+            --add-data        "utils:utils" \
+            --add-data        "models:models" \
+            --add-data        "services:services" \
+            --add-data        "excel:excel" \
+            --add-data        "export:export" \
+            --add-data        "ui:ui" \
+            --hidden-import   openpyxl \
+            --hidden-import   openpyxl.cell \
+            --hidden-import   openpyxl.cell._writer \
+            --hidden-import   openpyxl.styles \
+            --hidden-import   openpyxl.utils \
+            --hidden-import   openpyxl.writer.excel \
+            main.py
+
+      - name: Zipar .app para distribuição
+        run: |
+          cd dist
+          zip -r OrganizadorEntregas-macOS.zip OrganizadorEntregas.app
+
+      - name: Upload artefato macOS
+        uses: actions/upload-artifact@v4
+        with:
+          name: OrganizadorEntregas-macOS
+          path: dist/OrganizadorEntregas-macOS.zip
+          retention-days: 30
+
+  # ── Windows ──────────────────────────────────────────────────────────────────
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instalar dependências
+        run: pip install -r requirements-dev.txt
+
+      - name: Gerar .exe (Windows)
+        run: |
+          python -m PyInstaller `
+            --name            OrganizadorEntregas `
+            --windowed `
+            --onefile `
+            --noconfirm `
+            --add-data        "utils;utils" `
+            --add-data        "models;models" `
+            --add-data        "services;services" `
+            --add-data        "excel;excel" `
+            --add-data        "export;export" `
+            --add-data        "ui;ui" `
+            --hidden-import   openpyxl `
+            --hidden-import   openpyxl.cell `
+            --hidden-import   openpyxl.cell._writer `
+            --hidden-import   openpyxl.styles `
+            --hidden-import   openpyxl.utils `
+            --hidden-import   openpyxl.writer.excel `
+            main.py
+
+      - name: Upload artefato Windows
+        uses: actions/upload-artifact@v4
+        with:
+          name: OrganizadorEntregas-Windows
+          path: dist\OrganizadorEntregas.exe
+          retention-days: 30
