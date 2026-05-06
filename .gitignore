@@ -1,0 +1,24 @@
+# Build / PyInstaller
+build/
+dist/
+*.spec
+
+# Ambiente virtual de build
+.venv-build/
+.venv/
+venv/
+
+# Dados e logs gerados em runtime
+data/
+logs/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# macOS
+.DS_Store
+
+# pytest
+.pytest_cache/

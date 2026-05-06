@@ -21,8 +21,8 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Instalar dependências
-        run: pip install -r requirements-dev.txt
+      - name: Instalar apenas dependências necessárias
+        run: pip install openpyxl pyinstaller
 
       - name: Gerar .app (macOS)
         run: |
@@ -43,6 +43,11 @@ jobs:
             --hidden-import   openpyxl.styles \
             --hidden-import   openpyxl.utils \
             --hidden-import   openpyxl.writer.excel \
+            --exclude-module  numpy \
+            --exclude-module  PIL \
+            --exclude-module  lxml \
+            --exclude-module  matplotlib \
+            --exclude-module  pandas \
             main.py
 
       - name: Zipar .app para distribuição
@@ -70,8 +75,8 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Instalar dependências
-        run: pip install -r requirements-dev.txt
+      - name: Instalar apenas dependências necessárias
+        run: pip install openpyxl pyinstaller
 
       - name: Gerar .exe (Windows)
         run: |
@@ -92,6 +97,11 @@ jobs:
             --hidden-import   openpyxl.styles `
             --hidden-import   openpyxl.utils `
             --hidden-import   openpyxl.writer.excel `
+            --exclude-module  numpy `
+            --exclude-module  PIL `
+            --exclude-module  lxml `
+            --exclude-module  matplotlib `
+            --exclude-module  pandas `
             main.py
 
       - name: Upload artefato Windows
