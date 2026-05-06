@@ -1,14 +1,14 @@
-"""
-Gerenciamento centralizado de caminhos multiplataforma.
-
-  - Dados internos (JSON)  →  ~/.organizador/data/       (pasta oculta)
-  - Logs                   →  ~/.organizador/logs/        (pasta oculta)
-  - Exportações Excel      →  ~/Desktop/entregas/YYYY/MM/ (visível ao usuário)
-"""
+"""Gerenciamento centralizado de caminhos multiplataforma."""
 from __future__ import annotations
 
 from datetime import date
 from pathlib import Path
+
+MONTHS_PT: dict[int, str] = {
+    1: "janeiro", 2: "fevereiro", 3: "março",    4: "abril",
+    5: "maio",    6: "junho",     7: "julho",     8: "agosto",
+    9: "setembro", 10: "outubro", 11: "novembro", 12: "dezembro",
+}
 
 
 def _hidden_app_dir() -> Path:
@@ -24,15 +24,10 @@ def get_data_dir() -> Path:
     return p
 
 
-def get_logs_dir() -> Path:
-    p = _hidden_app_dir() / "logs"
-    p.mkdir(parents=True, exist_ok=True)
-    return p
-
-
 def get_export_dir(delivery_date: date) -> Path:
-    """Retorna (e cria) a pasta ano/mês dentro de ~/Desktop/entregas/."""
-    p = Path.home() / "Desktop" / "entregas" / str(delivery_date.year) / f"{delivery_date.month:02d}"
+    """~/Desktop/entregas/YYYY/nome-do-mês/"""
+    month_name = MONTHS_PT[delivery_date.month]
+    p = Path.home() / "Desktop" / "entregas" / str(delivery_date.year) / month_name
     p.mkdir(parents=True, exist_ok=True)
     return p
 
@@ -42,4 +37,6 @@ def get_json_path(delivery_date: date) -> Path:
 
 
 def get_excel_path(delivery_date: date) -> Path:
-    return get_export_dir(delivery_date) / f"entregas-{delivery_date.isoformat()}.xlsx"
+    """Nome do arquivo no padrão brasileiro: entregas-DD-MM-AA.xlsx"""
+    filename = f"entregas-{delivery_date.strftime('%d-%m-%y')}.xlsx"
+    return get_export_dir(delivery_date) / filename

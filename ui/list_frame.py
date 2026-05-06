@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import tkinter as tk
 from tkinter import messagebox, ttk
-from typing import Callable
+from typing import Callable, Optional
 
 from models.delivery import Delivery
 from ui.widgets import FlatButton
@@ -20,17 +20,31 @@ _WIDTHS   = (95, 210, 115, 60, 135, 80)
 
 
 class ListFrame(ttk.Frame):
-    def __init__(self, parent, on_remove: Callable[[str], None], **kwargs) -> None:
+    """
+    Callbacks:
+      on_remove(delivery_id)         chamado ao remover uma entrega
+      on_select(delivery_id | None)  chamado ao clicar numa entrega (ou desselecionar)
+    """
+
+    def __init__(
+        self,
+        parent,
+        on_remove: Callable[[str], None],
+        on_select: Callable[[Optional[str]], None],
+        **kwargs,
+    ) -> None:
         super().__init__(parent, **kwargs)
         self.configure(style="Panel.TFrame")
         self._on_remove = on_remove
+        self._on_select = on_select
         self._build()
+
+    # ── Construção ────────────────────────────────────────────────────────────
 
     def _build(self) -> None:
         ttk.Label(self, text="Preview (igual ao Excel)", style="PanelTitle.TLabel").pack(
             side="top", anchor="w", padx=12, pady=(10, 2)
         )
-
         self._count_var = tk.StringVar(value="0 entrega(s)")
         ttk.Label(self, textvariable=self._count_var, style="Count.TLabel").pack(
             side="top", anchor="w", padx=12, pady=(0, 4)
@@ -64,6 +78,9 @@ class ListFrame(ttk.Frame):
         tree_frame.rowconfigure(0, weight=1)
         tree_frame.columnconfigure(0, weight=1)
 
+        # Evento de seleção
+        self._tree.bind("<<TreeviewSelect>>", self._on_tree_select)
+
         btn_bar = ttk.Frame(self, style="Panel.TFrame")
         btn_bar.pack(fill="x", padx=12, pady=(6, 10))
 
@@ -71,15 +88,18 @@ class ListFrame(ttk.Frame):
             btn_bar,
             text="✕  Remover selecionada",
             command=self._handle_remove,
-            bg=BTN_REMOVE_BG,
-            fg=BTN_REMOVE_FG,
+            bg=BTN_REMOVE_BG, fg=BTN_REMOVE_FG,
             font=("Helvetica", 10, "bold"),
-            padx=10,
-            pady=7,
+            padx=10, pady=7,
         ).pack(side="left")
 
+    # ── API pública ───────────────────────────────────────────────────────────
+
     def refresh(self, deliveries: list[Delivery]) -> None:
+        """Reconstrói o Treeview com a lista ordenada."""
+        selected_before = self._get_selected_delivery_id()
         self._clear_tree()
+
         groups: dict[str, list[Delivery]] = {
             p: [] for p in sorted(PERIOD_ORDER, key=PERIOD_ORDER.get)
         }
@@ -104,6 +124,10 @@ class ListFrame(ttk.Frame):
                 )
                 total += 1
 
+        # Restaura seleção se o item ainda existir
+        if selected_before and self._tree.exists(selected_before):
+            self._tree.selection_set(selected_before)
+
         plural = "entrega" if total == 1 else "entregas"
         self._count_var.set(f"{total} {plural} na fila")
 
@@ -111,15 +135,26 @@ class ListFrame(ttk.Frame):
         self._clear_tree()
         self._count_var.set("0 entregas na fila")
 
+    def clear_selection(self) -> None:
+        self._tree.selection_remove(self._tree.selection())
+
+    # ── Handlers internos ─────────────────────────────────────────────────────
+
     def _handle_remove(self) -> None:
+        iid = self._get_selected_delivery_id()
+        if iid:
+            self._on_remove(iid)
+
+    def _on_tree_select(self, _event=None) -> None:
+        iid = self._get_selected_delivery_id()
+        self._on_select(iid)  # None se cabeçalho ou sem seleção
+
+    def _get_selected_delivery_id(self) -> Optional[str]:
         selected = self._tree.selection()
         if not selected:
-            return
+            return None
         iid = selected[0]
-        if iid.startswith("__period__"):
-            messagebox.showinfo("Seleção inválida", "Selecione uma entrega, não um cabeçalho de período.")
-            return
-        self._on_remove(iid)
+        return None if iid.startswith("__period__") else iid
 
     def _clear_tree(self) -> None:
         for item in self._tree.get_children():

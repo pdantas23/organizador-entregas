@@ -1,19 +1,17 @@
 """Validação e normalização de campos de entrega."""
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 
 
 # ── Normalização ──────────────────────────────────────────────────────────────
 
 def normalize_client_name(value: str) -> str:
-    """Remove espaços extras e aplica Title Case."""
     return " ".join(value.split()).title()
 
 
 def normalize_budget_number(value: str) -> str:
-    """Remove espaços extras e converte para maiúsculas."""
     return value.strip().upper()
 
 
@@ -25,18 +23,22 @@ def normalize_plate_count(value: str) -> str:
 
 def parse_date(value: str) -> tuple[bool, Optional[date], str]:
     """
-    Valida e converte uma string ISO (YYYY-MM-DD) para date.
-
-    Returns:
-        (ok, parsed_date, error_message)
+    Aceita os formatos:
+      - DD/MM/AAAA  (padrão brasileiro)
+      - DD/MM/AA    (ano abreviado)
+      - AAAA-MM-DD  (ISO, fallback)
     """
     raw = value.strip() if value else ""
     if not raw:
         return False, None, "Data da entrega é obrigatória."
-    try:
-        return True, date.fromisoformat(raw), ""
-    except ValueError:
-        return False, None, f"Data inválida '{raw}'. Use o formato AAAA-MM-DD."
+
+    for fmt in ("%d/%m/%Y", "%d/%m/%y", "%Y-%m-%d"):
+        try:
+            return True, datetime.strptime(raw, fmt).date(), ""
+        except ValueError:
+            continue
+
+    return False, None, f"Data inválida '{raw}'. Use o formato DD/MM/AAAA."
 
 
 # ── Validação de campos ───────────────────────────────────────────────────────
@@ -50,10 +52,6 @@ def validate_delivery_fields(
     period: str,
     urgency: str,
 ) -> list[str]:
-    """
-    Valida todos os campos de uma entrega.
-    Retorna lista de mensagens de erro (vazia = tudo válido).
-    """
     errors: list[str] = []
 
     ok, _, err = parse_date(date_str)
@@ -78,10 +76,8 @@ def validate_delivery_fields(
 
     if not status:
         errors.append("Status é obrigatório.")
-
     if not period:
         errors.append("Período é obrigatório.")
-
     if not urgency:
         errors.append("Urgência é obrigatória.")
 
@@ -93,10 +89,6 @@ def normalize_fields(
     budget_number: str,
     plate_count_str: str,
 ) -> tuple[str, str, int]:
-    """
-    Normaliza e converte os campos de texto.
-    Presume que validate_delivery_fields() já foi chamado sem erros.
-    """
     return (
         normalize_client_name(client_name),
         normalize_budget_number(budget_number),
