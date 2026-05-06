@@ -1,45 +1,38 @@
 """
 Gerenciamento centralizado de caminhos multiplataforma.
 
-Regras:
-  - Em desenvolvimento (não frozen): usa o diretório raiz do projeto.
-  - Em produção (frozen/PyInstaller):  usa ~/Desktop/entregas/ como base.
-  - Exportações Excel:  SEMPRE em ~/Desktop/entregas/
-  - JSON (fonte de verdade): base/data/
-  - Logs:                    base/logs/
+  - Dados internos (JSON)  →  ~/.organizador/data/       (pasta oculta)
+  - Logs                   →  ~/.organizador/logs/        (pasta oculta)
+  - Exportações Excel      →  ~/Desktop/entregas/YYYY/MM/ (visível ao usuário)
 """
 from __future__ import annotations
 
-import sys
 from datetime import date
 from pathlib import Path
 
 
-def _app_base() -> Path:
-    """Diretório-base para dados e logs."""
-    if getattr(sys, "frozen", False):
-        # Executável PyInstaller: persiste dados próximos ao Desktop, não no
-        # diretório temporário de extração (sys._MEIPASS).
-        return Path.home() / "Desktop" / "entregas"
-    # Desenvolvimento: usa a raiz do projeto (dois níveis acima de utils/).
-    return Path(__file__).resolve().parent.parent
+def _hidden_app_dir() -> Path:
+    """Pasta de dados da aplicação, oculta no home do usuário."""
+    p = Path.home() / ".organizador"
+    p.mkdir(parents=True, exist_ok=True)
+    return p
 
 
 def get_data_dir() -> Path:
-    p = _app_base() / "data"
+    p = _hidden_app_dir() / "data"
     p.mkdir(parents=True, exist_ok=True)
     return p
 
 
 def get_logs_dir() -> Path:
-    p = _app_base() / "logs"
+    p = _hidden_app_dir() / "logs"
     p.mkdir(parents=True, exist_ok=True)
     return p
 
 
-def get_export_dir() -> Path:
-    """Destino dos arquivos Excel — sempre no Desktop do usuário."""
-    p = Path.home() / "Desktop" / "entregas"
+def get_export_dir(delivery_date: date) -> Path:
+    """Retorna (e cria) a pasta ano/mês dentro de ~/Desktop/entregas/."""
+    p = Path.home() / "Desktop" / "entregas" / str(delivery_date.year) / f"{delivery_date.month:02d}"
     p.mkdir(parents=True, exist_ok=True)
     return p
 
@@ -49,4 +42,4 @@ def get_json_path(delivery_date: date) -> Path:
 
 
 def get_excel_path(delivery_date: date) -> Path:
-    return get_export_dir() / f"entregas-{delivery_date.isoformat()}.xlsx"
+    return get_export_dir(delivery_date) / f"entregas-{delivery_date.isoformat()}.xlsx"

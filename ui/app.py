@@ -1,12 +1,4 @@
-"""
-App — janela principal e controlador da aplicação.
-
-Orquestra o fluxo completo:
-  FormFrame → SessionService → ListFrame (preview)
-  → PersistenceService (JSON) → ExcelExporter (.xlsx)
-
-Nenhuma lógica de negócio reside aqui: o App apenas coordena serviços.
-"""
+"""App — janela principal e controlador da aplicação."""
 from __future__ import annotations
 
 import tkinter as tk
@@ -17,6 +9,7 @@ from services.persistence_service import PersistenceService
 from services.session_service import SessionService
 from ui.form_frame import FormFrame
 from ui.list_frame import ListFrame
+from ui.widgets import FlatButton
 from utils.constants import (
     BTN_GENERATE_BG, BTN_GENERATE_FG,
     UI_BG, UI_HEADER_BG, UI_HEADER_FG, UI_PANEL_BG,
@@ -36,29 +29,30 @@ class App(tk.Tk):
         self.minsize(MIN_W, MIN_H)
         self.configure(bg=UI_BG)
 
-        # Serviços
-        self._session = SessionService()
+        self._session    = SessionService()
         self._persistence = PersistenceService()
-        self._exporter = ExcelExporter()
+        self._exporter   = ExcelExporter()
 
         self._setup_styles()
         self._build()
         self._center_window()
         log.info("Aplicação iniciada")
 
-    # ── Estilos ttk ──────────────────────────────────────────────────────────
+    # ── Estilos ───────────────────────────────────────────────────────────────
 
     def _setup_styles(self) -> None:
         style = ttk.Style(self)
 
-        preferred = ("aqua", "vista", "xpnative", "clam", "alt", "default")
-        for theme in preferred:
-            if theme in style.theme_names():
+        # Força tema 'clam' para que cores de widgets ttk funcionem em macOS.
+        # O tema 'aqua' (padrão no macOS) ignora bg/fg de botões tk.
+        available = style.theme_names()
+        for theme in ("clam", "alt", "default"):
+            if theme in available:
                 style.theme_use(theme)
                 break
 
-        style.configure("TFrame",         background=UI_BG)
-        style.configure("Panel.TFrame",   background=UI_PANEL_BG)
+        style.configure("TFrame",       background=UI_BG)
+        style.configure("Panel.TFrame", background=UI_PANEL_BG)
 
         style.configure("PanelTitle.TLabel",
             background=UI_PANEL_BG, foreground="#1A3A5C",
@@ -78,12 +72,8 @@ class App(tk.Tk):
         )
         style.configure("TEntry",    fieldbackground="#FAFAFA", padding=(4, 4))
         style.configure("TCombobox", padding=(4, 4))
-        style.configure("Treeview",
-            rowheight=22, font=("Helvetica", 10),
-        )
-        style.configure("Treeview.Heading",
-            font=("Helvetica", 10, "bold"),
-        )
+        style.configure("Treeview",  rowheight=22, font=("Helvetica", 10))
+        style.configure("Treeview.Heading", font=("Helvetica", 10, "bold"))
 
     # ── Layout ────────────────────────────────────────────────────────────────
 
@@ -100,7 +90,6 @@ class App(tk.Tk):
         tk.Label(header, text="📋", bg=UI_HEADER_BG,
                  font=("Helvetica", 18), fg=UI_HEADER_FG,
                  ).pack(side="left", padx=(16, 6), pady=10)
-
         tk.Label(header, text=APP_TITLE, bg=UI_HEADER_BG,
                  fg=UI_HEADER_FG, font=("Helvetica", 14, "bold"),
                  ).pack(side="left", pady=10)
@@ -113,46 +102,35 @@ class App(tk.Tk):
         body.columnconfigure(2, weight=1)
         body.rowconfigure(0, weight=1)
 
-        # Painel esquerdo: formulário
         form_panel = tk.Frame(body, bg=UI_PANEL_BG)
         form_panel.grid(row=0, column=0, sticky="nsew")
-
-        self._form = FormFrame(
-            form_panel,
-            on_add=self._handle_add,
-            style="Panel.TFrame",
-        )
+        self._form = FormFrame(form_panel, on_add=self._handle_add, style="Panel.TFrame")
         self._form.pack(fill="both", expand=True)
 
-        # Painel direito: preview
         list_panel = tk.Frame(body, bg=UI_PANEL_BG)
         list_panel.grid(row=0, column=2, sticky="nsew")
-
-        self._list = ListFrame(
-            list_panel,
-            on_remove=self._handle_remove,
-            style="Panel.TFrame",
-        )
+        self._list = ListFrame(list_panel, on_remove=self._handle_remove, style="Panel.TFrame")
         self._list.pack(fill="both", expand=True)
 
     def _build_footer(self) -> None:
         footer = tk.Frame(self, bg=UI_BG)
         footer.pack(fill="x", side="bottom", padx=12, pady=(0, 12))
 
-        tk.Button(
+        FlatButton(
             footer,
             text="  ⬇  Gerar / Atualizar Planilha  ",
             command=self._handle_generate,
-            bg=BTN_GENERATE_BG, fg=BTN_GENERATE_FG,
+            bg=BTN_GENERATE_BG,
+            fg=BTN_GENERATE_FG,
             font=("Helvetica", 12, "bold"),
-            relief="flat", cursor="hand2",
-            padx=16, pady=10,
+            padx=16,
+            pady=10,
         ).pack(side="left")
 
         self._status_var = tk.StringVar(value="Adicione entregas e clique em Gerar.")
-        ttk.Label(footer, textvariable=self._status_var,
-                  style="Status.TLabel",
-                  ).pack(side="left", padx=16)
+        ttk.Label(footer, textvariable=self._status_var, style="Status.TLabel").pack(
+            side="left", padx=16
+        )
 
     # ── Handlers ─────────────────────────────────────────────────────────────
 
@@ -161,10 +139,11 @@ class App(tk.Tk):
         if not result:
             messagebox.showwarning("Duplicata detectada", result.message)
             return
-
         self._form.clear_volatile_fields()
         self._refresh_list()
-        self._status_var.set(f"Adicionada: {delivery.client_name} ({delivery.period} · {delivery.urgency})")
+        self._status_var.set(
+            f"Adicionada: {delivery.client_name} ({delivery.period} · {delivery.urgency})"
+        )
 
     def _handle_remove(self, delivery_id: str) -> None:
         self._session.remove(delivery_id)
@@ -173,45 +152,32 @@ class App(tk.Tk):
 
     def _handle_generate(self) -> None:
         if self._session.is_empty():
-            messagebox.showwarning(
-                "Sem entregas",
-                "Adicione ao menos uma entrega antes de gerar a planilha.",
-            )
+            messagebox.showwarning("Sem entregas", "Adicione ao menos uma entrega antes de gerar.")
             return
 
-        deliveries_by_date = self._session.get_by_date()
         results: list[str] = []
-        errors: list[str] = []
+        errors:  list[str] = []
 
-        for d_date, d_list in deliveries_by_date.items():
+        for d_date, d_list in self._session.get_by_date().items():
             try:
-                # 1. Persiste no JSON (fonte de verdade)
                 added, skipped = self._persistence.merge_and_save(d_date, d_list)
-
-                # 2. Carrega do JSON (inclui tudo salvo anteriormente)
-                all_saved = self._persistence.load(d_date)
-
-                # 3. Gera Excel do zero a partir do JSON
-                filepath = self._exporter.export(d_date, all_saved)
+                all_saved      = self._persistence.load(d_date)
+                filepath       = self._exporter.export(d_date, all_saved)
 
                 msg = f"• {filepath.name}: {added} adicionada(s)"
                 if skipped:
                     msg += f", {skipped} duplicata(s) ignorada(s)"
                 results.append(msg)
-                log.info("Exportação concluída: %s", filepath.name)
-
             except Exception as exc:
-                err = f"• {d_date.isoformat()}: {exc}"
-                errors.append(err)
-                log.error("Erro ao exportar %s: %s", d_date.isoformat(), exc)
+                errors.append(f"• {d_date}: {exc}")
+                log.error("Erro ao exportar %s: %s", d_date, exc)
 
         if errors:
             messagebox.showerror("Erro ao gerar planilha", "\n".join(errors))
         else:
-            summary = "\n".join(results)
             messagebox.showinfo(
-                "Planilha gerada com sucesso ✓",
-                f"Arquivos salvos em:\n  ~/Desktop/entregas/\n\n{summary}",
+                "Planilha gerada ✓",
+                f"Salvo em:\n  ~/Desktop/entregas/\n\n" + "\n".join(results),
             )
             self._session.clear()
             self._refresh_list()

@@ -50,16 +50,26 @@ jobs:
             --exclude-module  pandas \
             main.py
 
-      - name: Zipar .app para distribuição
+      - name: Criar DMG instalador
         run: |
-          cd dist
-          zip -r OrganizadorEntregas-macOS.zip OrganizadorEntregas.app
+          STAGING="/tmp/OrganizadorEntregas-dmg-staging"
+          rm -rf "$STAGING"
+          mkdir -p "$STAGING"
+          cp -r dist/OrganizadorEntregas.app "$STAGING/"
+          ln -s /Applications "$STAGING/Applications"
+          hdiutil create \
+            -volname  OrganizadorEntregas \
+            -srcfolder "$STAGING" \
+            -ov \
+            -format   UDZO \
+            dist/OrganizadorEntregas.dmg
+          rm -rf "$STAGING"
 
       - name: Upload artefato macOS
         uses: actions/upload-artifact@v4
         with:
           name: OrganizadorEntregas-macOS
-          path: dist/OrganizadorEntregas-macOS.zip
+          path: dist/OrganizadorEntregas.dmg
           retention-days: 30
 
   # ── Windows ──────────────────────────────────────────────────────────────────
